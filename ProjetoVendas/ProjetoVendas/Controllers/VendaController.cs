@@ -17,16 +17,10 @@ namespace ProjetoVendas.Controllers
 
         public IActionResult Index(string search)
         {
-            var vendas = _context.Venda
-                .Include(v => v.Cliente)
-                .Include(v => v.Produto)
-                .Where(v => string.IsNullOrEmpty(search) ||
-                            v.Cliente.nmCliente.Contains(search) ||
-                            v.Produto.dscProduto.Contains(search))
-                .ToList();
-
-            return View("~/Views/Importacao/Venda.cshtml", vendas);
+            return View("~/Views/Importacao/Venda.cshtml");
         }
+
+
 
         [HttpGet]
         public JsonResult GetVendas(string search)

@@ -14,8 +14,7 @@ namespace ProjetoVendas.Controllers
 
         public IActionResult Index(string search)
         {
-            var clientes = string.IsNullOrEmpty(search) ? _context.Cliente.ToList() : _context.Cliente.Where(c => c.nmCliente.Contains(search)).ToList();
-            return View("~/Views/Importacao/Cliente.cshtml", clientes);
+            return View("~/Views/Importacao/Cliente.cshtml");
         }
 
         [HttpGet]

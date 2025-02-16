@@ -17,11 +17,7 @@ namespace ProjetoVendas.Controllers
 
         public IActionResult Index(string search)
         {
-            var produtos = string.IsNullOrEmpty(search)
-                ? _context.Produto.ToList()
-                : _context.Produto.Where(p => p.dscProduto.Contains(search)).ToList();
-
-            return View("~/Views/Importacao/Produto.cshtml", produtos);
+            return View("~/Views/Importacao/Produto.cshtml");
         }
 
         [HttpGet]

@@ -70,17 +70,19 @@
                     data: { search: search },
                     success: function (vendas) {
                         let rows = vendas.map(v => `
-                            <tr>
-                                <td>${v.idVenda}</td>
-                                <td>${v.Cliente}</td>
-                                <td>${v.Produto}</td>
-                                <td>${v.quantidade}</td>
-                                <td>R$ ${v.total.toFixed(2)}</td>
-                                <td>
-                                    <button class="btn btn-warning btn-sm editVenda" data-id="${v.idVenda}" data-cliente="${v.Cliente}" data-produto="${v.Produto}" data-quantidade="${v.quantidade}">Editar</button>
-                                    <button class="btn btn-danger btn-sm deleteVenda" data-id="${v.idVenda}">Excluir</button>
-                                </td>
-                            </tr>`).join('');
+                        <tr>
+                            <td>${v.idVenda}</td>
+                            <td>${v.cliente}</td>
+                            <td>${v.produto}</td>
+                            <td>${v.qtdVenda}</td>
+                            <td>R$ ${v.vlrTotalVenda.toFixed(2)}</td>
+                            <td>
+                                <button class="btn btn-warning btn-sm editVenda" data-id="${v.idVenda}"
+                                    data-cliente="${v.cliente}" data-produto="${v.produto}"
+                                    data-quantidade="${v.qtdVenda}">Editar</button>
+                                <button class="btn btn-danger btn-sm deleteVenda" data-id="${v.idVenda}">Excluir</button>
+                            </td>
+                        </tr>`).join('');
                         $('#vendaTable').html(rows);
                     },
                     error: function (err) {
@@ -88,6 +90,7 @@
                     }
                 });
             }
+
 
             function loadClientesProdutos() {
                 $.get('/Cliente/GetClientes', function (clientes) {
@@ -107,9 +110,9 @@
                 e.preventDefault();
                 let venda = {
                     idVenda: editingVendaId,
-                    idCliente: $('#vendaCliente').val(),
-                    idProduto: $('#vendaProduto').val(),
-                    quantidade: $('#vendaQuantidade').val()
+                    idCliente: $('#Cliente').val(),
+                    idProduto: $('#Produto').val(),
+                    quantidade: $('#qtdVenda').val()
                 };
 
                 let method = editingVendaId ? 'PUT' : 'POST';

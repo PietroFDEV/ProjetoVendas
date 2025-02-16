@@ -7,16 +7,18 @@ namespace ProjetoVenda.Models
     {
         [Key]
         public int idVenda { get; set; }
+
+        [ForeignKey("Cliente")]
         public int idCliente { get; set; }
+        public Cliente Cliente { get; set; }
+
+        [ForeignKey("Produto")]
         public int idProduto { get; set; }
+        public Produto Produto { get; set; }
+
         public int qtdVenda { get; set; }
         public double vleUnitarioVenda { get; set; }
         public DateTime dthVenda { get; set; }
         public double vlrTotalVenda { get; set; }
-
-        [NotMapped]
-        public Cliente Cliente { get; set; }
-        [NotMapped]
-        public Produto Produto { get; set; }
     }
 }
