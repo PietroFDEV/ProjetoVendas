@@ -1,0 +1,17 @@
+﻿@{
+    ViewData["Title"] = "Importação";
+}
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success">@TempData["SuccessMessage"]</div>
+}
+
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger">@TempData["ErrorMessage"]</div>
+}
+<div class="text-center mb-6">
+    <h1 class="text-3xl font-semibold">Importação de Dados</h1>
+    <a asp-controller="Importacao" asp-action="ImportData" class="btn btn-primary">Importar Novos Dados</a>
+</div>

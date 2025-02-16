@@ -1,0 +1,14 @@
+.vs/
+.idea/
+Thumbs.db
+.DS_Store
+
+*.user
+*.suo
+*.vsp
+*.pdb
+*.log
+*.tlog
+
+bin/
+obj/

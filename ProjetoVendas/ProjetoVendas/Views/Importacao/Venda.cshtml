@@ -1,0 +1,171 @@
+﻿<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vendas</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</head>
+<body>
+    <div class="container mt-4">
+        <h2>Vendas</h2>
+        <input type="text" id="searchVenda" class="form-control mb-3" placeholder="Pesquisar por Cliente ou Produto">
+
+        <button class="btn btn-primary mb-3" data-bs-toggle="modal" data-bs-target="#vendaModal">Nova Venda</button>
+
+        <table class="table table-bordered">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Cliente</th>
+                    <th>Produto</th>
+                    <th>Quantidade</th>
+                    <th>Total</th>
+                    <th>Ações</th>
+                </tr>
+            </thead>
+            <tbody id="vendaTable">
+            </tbody>
+        </table>
+    </div>
+
+    <div class="modal fade" id="vendaModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Cadastrar Venda</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="vendaForm">
+                        <div class="mb-3">
+                            <label>Cliente:</label>
+                            <select id="vendaCliente" class="form-control" required></select>
+                        </div>
+                        <div class="mb-3">
+                            <label>Produto:</label>
+                            <select id="vendaProduto" class="form-control" required></select>
+                        </div>
+                        <div class="mb-3">
+                            <label>Quantidade:</label>
+                            <input type="number" id="vendaQuantidade" class="form-control" required>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Salvar</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        $(document).ready(function () {
+            let editingVendaId = null;
+
+            function loadVendas(search = '') {
+                $.ajax({
+                    url: '/Venda/GetVendas',
+                    type: 'GET',
+                    data: { search: search },
+                    success: function (vendas) {
+                        let rows = vendas.map(v => `
+                            <tr>
+                                <td>${v.idVenda}</td>
+                                <td>${v.Cliente}</td>
+                                <td>${v.Produto}</td>
+                                <td>${v.quantidade}</td>
+                                <td>R$ ${v.total.toFixed(2)}</td>
+                                <td>
+                                    <button class="btn btn-warning btn-sm editVenda" data-id="${v.idVenda}" data-cliente="${v.Cliente}" data-produto="${v.Produto}" data-quantidade="${v.quantidade}">Editar</button>
+                                    <button class="btn btn-danger btn-sm deleteVenda" data-id="${v.idVenda}">Excluir</button>
+                                </td>
+                            </tr>`).join('');
+                        $('#vendaTable').html(rows);
+                    },
+                    error: function (err) {
+                        console.error("Erro ao carregar vendas", err);
+                    }
+                });
+            }
+
+            function loadClientesProdutos() {
+                $.get('/Cliente/GetClientes', function (clientes) {
+                    $('#vendaCliente').html(clientes.map(c => `<option value="${c.idCliente}">${c.nome}</option>`));
+                });
+
+                $.get('/Produto/GetProdutos', function (produtos) {
+                    $('#vendaProduto').html(produtos.map(p => `<option value="${p.idProduto}">${p.descricao}</option>`));
+                });
+            }
+
+            $('#searchVenda').on('input', function () {
+                loadVendas($(this).val());
+            });
+
+            $('#vendaForm').on('submit', function (e) {
+                e.preventDefault();
+                let venda = {
+                    idVenda: editingVendaId,
+                    idCliente: $('#vendaCliente').val(),
+                    idProduto: $('#vendaProduto').val(),
+                    quantidade: $('#vendaQuantidade').val()
+                };
+
+                let method = editingVendaId ? 'PUT' : 'POST';
+                let url = editingVendaId ? `/Venda/Edit/${editingVendaId}` : '/Venda/Create';
+
+                $.ajax({
+                    url: url,
+                    type: method,
+                    contentType: 'application/json',
+                    data: JSON.stringify(venda),
+                    success: function () {
+                        $('#vendaModal').modal('hide');
+                        loadVendas();
+                        $('#vendaForm')[0].reset();
+                        editingVendaId = null;
+                    },
+                    error: function (err) {
+                        console.error("Erro ao salvar venda", err);
+                    }
+                });
+            });
+
+            $(document).on('click', '.editVenda', function () {
+                let id = $(this).data('id');
+                let cliente = $(this).data('cliente');
+                let produto = $(this).data('produto');
+                let quantidade = $(this).data('quantidade');
+
+                editingVendaId = id;
+                $('#vendaCliente').val(cliente);
+                $('#vendaProduto').val(produto);
+                $('#vendaQuantidade').val(quantidade);
+
+                $('#vendaModal').modal('show');
+            });
+
+            $(document).on('click', '.deleteVenda', function () {
+                let id = $(this).data('id');
+
+                if (confirm("Tem certeza que deseja excluir esta venda?")) {
+                    $.ajax({
+                        url: `/Venda/Delete/${id}`,
+                        type: 'POST',
+                        success: function () {
+                            loadVendas();
+                        },
+                        error: function (err) {
+                            console.error("Erro ao excluir venda", err);
+                        }
+                    });
+                }
+            });
+
+            loadVendas();
+            loadClientesProdutos();
+        });
+    </script>
+</body>
+</html>

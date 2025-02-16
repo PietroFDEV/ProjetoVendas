@@ -1,0 +1,172 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Clientes</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</head>
+<body>
+    <div class="container mt-4">
+        <h2>Clientes</h2>
+        <input type="text" id="searchCliente" class="form-control mb-3" placeholder="Pesquisar por nome">
+
+        <button class="btn btn-primary mb-3" data-bs-toggle="modal" data-bs-target="#clienteModal">Novo Cliente</button>
+
+        <table class="table table-bordered">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Nome</th>
+                    <th>Cidade</th>
+                    <th>Ações</th>
+                </tr>
+            </thead>
+            <tbody id="clienteTable">
+            </tbody>
+        </table>
+    </div>
+
+    <div class="modal fade" id="clienteModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Cadastrar Cliente</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="clienteForm">
+                        <div class="mb-3">
+                            <label>Nome:</label>
+                            <input type="text" id="clienteNome" class="form-control" required>
+                        </div>
+                        <div class="mb-3">
+                            <label>Cidade:</label>
+                            <input type="text" id="clienteCidade" class="form-control" required>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Salvar</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        $(document).ready(function () {
+            let editingClienteId = null;
+
+            function loadClientes(search = '') {
+                $.ajax({
+                    url: '/Cliente/GetClientes',
+                    type: 'GET',
+                    data: { search: search },
+                    success: function (clientes) {
+                        let rows = clientes.map(c => `
+                                <tr>
+                                    <td>${c.idCliente}</td>
+                                    <td>${c.nmCliente}</td>
+                                    <td>${c.cidade}</td>
+                                    <td>
+                                        <button class="btn btn-warning btn-sm editCliente" data-id="${c.idCliente}" data-nome="${c.nmCliente}" data-cidade="${c.cidade}">Editar</button>
+                                        <button class="btn btn-danger btn-sm deleteCliente" data-id="${c.idCliente}">Excluir</button>
+                                    </td>
+                                </tr>`).join('');
+                        $('#clienteTable').html(rows);
+                    },
+                    error: function (err) {
+                        console.error("Erro ao carregar clientes", err);
+                    }
+                });
+            }
+
+            loadClientes();
+
+            $('#searchCliente').on('keyup', function () {
+                let searchValue = $(this).val();
+                loadClientes(searchValue);
+            });
+
+            $('#clienteForm').submit(function (e) {
+                e.preventDefault();
+                let nome = $('#clienteNome').val();
+                let cidade = $('#clienteCidade').val();
+
+                if (editingClienteId) {
+                    $.ajax({
+                        url: `/Cliente/Edit`,
+                        type: 'POST',
+                        contentType: 'application/json',
+                        data: JSON.stringify({
+                            idCliente: editingClienteId,
+                            nmCliente: nome,
+                            cidade: cidade
+                        }),
+                        success: function () {
+                            console.log("Edit successful!");
+                            $('#clienteModal').modal('hide');
+                            loadClientes();
+                        },
+                        error: function (xhr, status, error) {
+                            console.error("Erro ao editar cliente:", xhr.status, xhr.responseText);
+                        }
+                    });
+
+                } else {
+                    $.ajax({
+                        url: '/Cliente/Create',
+                        type: 'POST',
+                        contentType: 'application/json',
+                        data: JSON.stringify({ nmCliente: nome, cidade: cidade }),
+                        success: function () {
+                            console.log("Created successful!");
+                            $('.modal-backdrop').remove();
+                            $('#clienteModal').modal('hide');
+                            loadClientes();
+                        },
+                        error: function (err) {
+                            console.error("Erro ao cadastrar cliente", err);
+                        }
+                    });
+                }
+            });
+
+            $(document).on('click', '.deleteCliente', function () {
+                let id = $(this).data('id');
+                if (confirm("Tem certeza que deseja excluir este cliente?")) {
+                    $.ajax({
+                        url: `/Cliente/Delete/${id}`,
+                        type: 'POST',
+                        success: function () {
+                            alert("Cliente excluído!");
+                            loadClientes();
+                        },
+                        error: function (err) {
+                            console.error("Erro ao excluir", err);
+                        }
+                    });
+                }
+            });
+
+            $(document).on('click', '.editCliente', function () {
+                let id = $(this).data('id');
+                let nome = $(this).data('nome');
+                let cidade = $(this).data('cidade');
+
+                $('#clienteNome').val(nome);
+                $('#clienteCidade').val(cidade);
+                editingClienteId = id;
+                $('#clienteModal').modal('show');
+            });
+
+            $('#clienteModal').on('hidden.bs.modal', function () {
+                $('#clienteForm')[0].reset();
+                editingClienteId = null;
+            });
+        });
+
+    </script>
+
+</body>
+</html>

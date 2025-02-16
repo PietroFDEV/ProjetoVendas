@@ -1,0 +1,165 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Produtos</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</head>
+<body>
+    <div class="container mt-4">
+        <h2>Produtos</h2>
+        <input type="text" id="searchProduto" class="form-control mb-3" placeholder="Pesquisar por descrição">
+
+        <button class="btn btn-primary mb-3" data-bs-toggle="modal" data-bs-target="#produtoModal">Novo Produto</button>
+
+        <table class="table table-bordered">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Descrição</th>
+                    <th>Valor Unitário</th>
+                    <th>Ações</th>
+                </tr>
+            </thead>
+            <tbody id="produtoTable"></tbody>
+        </table>
+    </div>
+
+    <div class="modal fade" id="produtoModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Cadastrar Produto</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="produtoForm">
+                        <div class="mb-3">
+                            <label>Descrição:</label>
+                            <input type="text" id="produtoDescricao" class="form-control" required>
+                        </div>
+                        <div class="mb-3">
+                            <label>Valor Unitário:</label>
+                            <input type="number" id="produtoValor" class="form-control" step="0.01" required>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Salvar</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        $(document).ready(function () {
+            let editingProdutoId = null;
+
+            function loadProdutos(search = '') {
+                $.ajax({
+                    url: '/Produto/GetProdutos',
+                    type: 'GET',
+                    data: { search: search },
+                    success: function (produtos) {
+                        let rows = produtos.map(p => `
+                                    <tr>
+                                        <td>${p.idProduto}</td>
+                                        <td>${p.dscProduto}</td>
+                                        <td>R$ ${p.vlrUnitario.toFixed(2)}</td>
+                                        <td>
+                                            <button class="btn btn-warning btn-sm editProduto" data-id="${p.idProduto}" data-descricao="${p.dscProduto}" data-valor="${p.vlrUnitario}">Editar</button>
+                                            <button class="btn btn-danger btn-sm deleteProduto" data-id="${p.idProduto}">Excluir</button>
+                                        </td>
+                                    </tr>`).join('');
+                        $('#produtoTable').html(rows);
+                    },
+                    error: function (err) {
+                        console.error("Erro ao carregar produtos", err);
+                    }
+                });
+            }
+
+            loadProdutos();
+
+            $('#searchProduto').on('keyup', function () {
+                let searchValue = $(this).val();
+                loadProdutos(searchValue);
+            });
+
+            $('#produtoForm').submit(function (e) {
+                e.preventDefault();
+                let descricao = $('#produtoDescricao').val();
+                let valor = parseFloat($('#produtoValor').val());
+
+                if (editingProdutoId) {
+                    $.ajax({
+                        url: `/Produto/Edit`,
+                        type: 'POST',
+                        contentType: 'application/json',
+                        data: JSON.stringify({
+                            idProduto: editingProdutoId,
+                            dscProduto: descricao,
+                            vlrUnitario: valor
+                        }),
+                        success: function () {
+                            $('#produtoModal').modal('hide');
+                            loadProdutos();
+                        },
+                        error: function (err) {
+                            console.error("Erro ao editar produto", err);
+                        }
+                    });
+                } else {
+                    $.ajax({
+                        url: '/Produto/Create',
+                        type: 'POST',
+                        contentType: 'application/json',
+                        data: JSON.stringify({ dscProduto: descricao, vlrUnitario: valor }),
+                        success: function () {
+                            $('.modal-backdrop').remove();
+                            $('#produtoModal').modal('hide');
+                            loadProdutos();
+                        },
+                        error: function (err) {
+                            console.error("Erro ao cadastrar produto", err);
+                        }
+                    });
+                }
+            });
+
+            $(document).on('click', '.deleteProduto', function () {
+                let id = $(this).data('id');
+                if (confirm("Tem certeza que deseja excluir este produto?")) {
+                    $.ajax({
+                        url: `/Produto/Delete/${id}`,
+                        type: 'POST',
+                        success: function () {
+                            loadProdutos();
+                        },
+                        error: function (err) {
+                            console.error("Erro ao excluir", err);
+                        }
+                    });
+                }
+            });
+
+            $(document).on('click', '.editProduto', function () {
+                let id = $(this).data('id');
+                let descricao = $(this).data('descricao');
+                let valor = $(this).data('valor');
+
+                $('#produtoDescricao').val(descricao);
+                $('#produtoValor').val(valor);
+                editingProdutoId = id;
+                $('#produtoModal').modal('show');
+            });
+
+            $('#produtoModal').on('hidden.bs.modal', function () {
+                $('#produtoForm')[0].reset();
+                editingProdutoId = null;
+            });
+        });
+    </script>
+</body>
+</html>
