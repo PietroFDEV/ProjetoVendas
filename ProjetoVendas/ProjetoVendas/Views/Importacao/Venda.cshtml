@@ -9,6 +9,10 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </head>
 <body>
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger">@TempData["ErrorMessage"]</div>
+    }
     <div class="container mt-4">
         <h2>Vendas</h2>
         <input type="text" id="searchVenda" class="form-control mb-3" placeholder="Pesquisar por Cliente ou Produto">
@@ -52,6 +56,11 @@
                             <label>Quantidade:</label>
                             <input type="number" id="vendaQuantidade" class="form-control" required>
                         </div>
+                        <div class="mb-3">
+                            <label>Data da Venda:</label>
+                            <input type="datetime-local" id="vendaData" class="form-control" required>
+                        </div>
+
                         <button type="submit" class="btn btn-primary">Salvar</button>
                     </form>
                 </div>
@@ -78,7 +87,7 @@
                             <td>R$ ${v.vlrTotalVenda.toFixed(2)}</td>
                             <td>
                                 <button class="btn btn-warning btn-sm editVenda" data-id="${v.idVenda}"
-                                    data-cliente="${v.cliente}" data-produto="${v.produto}"
+                                    data-cliente="${v.idCliente}" data-produto="${v.idProduto}"
                                     data-quantidade="${v.qtdVenda}">Editar</button>
                                 <button class="btn btn-danger btn-sm deleteVenda" data-id="${v.idVenda}">Excluir</button>
                             </td>
@@ -91,14 +100,19 @@
                 });
             }
 
-
             function loadClientesProdutos() {
                 $.get('/Cliente/GetClientes', function (clientes) {
-                    $('#vendaCliente').html(clientes.map(c => `<option value="${c.idCliente}">${c.nome}</option>`));
+                    let options = clientes.map(c => `<option value="${c.idCliente}">${c.nmCliente}</option>`).join('');
+                    $('#vendaCliente').html('<option value="">Selecione um Cliente</option>' + options);
+                }).fail(function () {
+                    console.error("Erro ao carregar clientes.");
                 });
 
                 $.get('/Produto/GetProdutos', function (produtos) {
-                    $('#vendaProduto').html(produtos.map(p => `<option value="${p.idProduto}">${p.descricao}</option>`));
+                    let options = produtos.map(p => `<option value="${p.idProduto}">${p.dscProduto}</option>`).join('');
+                    $('#vendaProduto').html('<option value="">Selecione um Produto</option>' + options);
+                }).fail(function () {
+                    console.error("Erro ao carregar produtos.");
                 });
             }
 
@@ -106,42 +120,59 @@
                 loadVendas($(this).val());
             });
 
-            $('#vendaForm').on('submit', function (e) {
+            $('#vendaForm').submit(function (e) {
                 e.preventDefault();
+
                 let venda = {
-                    idVenda: editingVendaId,
-                    idCliente: $('#Cliente').val(),
-                    idProduto: $('#Produto').val(),
-                    quantidade: $('#qtdVenda').val()
+                    idVenda: editingVendaId ? editingVendaId : 0,
+                    idCliente: $('#vendaCliente').val(),
+                    idProduto: $('#vendaProduto').val(),
+                    qtdVenda: $('#vendaQuantidade').val(),
+                    dthVenda: $('#vendaData').val()
                 };
 
-                let method = editingVendaId ? 'PUT' : 'POST';
-                let url = editingVendaId ? `/Venda/Edit/${editingVendaId}` : '/Venda/Create';
-
-                $.ajax({
-                    url: url,
-                    type: method,
-                    contentType: 'application/json',
-                    data: JSON.stringify(venda),
-                    success: function () {
-                        $('#vendaModal').modal('hide');
-                        loadVendas();
-                        $('#vendaForm')[0].reset();
-                        editingVendaId = null;
-                    },
-                    error: function (err) {
-                        console.error("Erro ao salvar venda", err);
-                    }
-                });
+                if (editingVendaId) {
+                    $.ajax({
+                        url: `/Venda/Edit`,
+                        type: 'POST',
+                        contentType: 'application/json',
+                        data: JSON.stringify(venda),
+                        success: function () {
+                            console.log("Edit successful!");
+                            $('#vendaModal').modal('hide');
+                            loadVendas();
+                        },
+                        error: function (xhr) {
+                            console.error("Erro ao editar venda:", xhr.status, xhr.responseText);
+                        }
+                    });
+                } else {
+                    $.ajax({
+                        url: '/Venda/Create',
+                        type: 'POST',
+                        contentType: 'application/json',
+                        data: JSON.stringify(venda),
+                        success: function () {
+                            console.log("Created successful!");
+                            $('.modal-backdrop').remove();
+                            $('#vendaModal').modal('hide');
+                            loadVendas();
+                        },
+                        error: function (err) {
+                            console.error("Erro ao cadastrar venda", err);
+                        }
+                    });
+                }
             });
 
             $(document).on('click', '.editVenda', function () {
                 let id = $(this).data('id');
-                let cliente = $(this).data('cliente');
-                let produto = $(this).data('produto');
+                let cliente = $(this).data('idCliente');
+                let produto = $(this).data('idProduto');
                 let quantidade = $(this).data('quantidade');
 
                 editingVendaId = id;
+
                 $('#vendaCliente').val(cliente);
                 $('#vendaProduto').val(produto);
                 $('#vendaQuantidade').val(quantidade);
@@ -157,6 +188,7 @@
                         url: `/Venda/Delete/${id}`,
                         type: 'POST',
                         success: function () {
+                            alert("Venda excluída!");
                             loadVendas();
                         },
                         error: function (err) {

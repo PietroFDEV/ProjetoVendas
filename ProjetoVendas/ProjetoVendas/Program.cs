@@ -17,7 +17,7 @@ var app = builder.Build();
 
 if (!app.Environment.IsDevelopment())
 {
-    app.UseExceptionHandler("/Home/Error");
+    app.UseExceptionHandler("/Importacao/Error");
     app.UseHsts();
 }
 

@@ -20,7 +20,7 @@ CREATE TABLE Venda (
     idCliente INT NOT NULL,
     idProduto INT NOT NULL,
     qtdVenda INT NOT NULL,
-    vleUnitarioVenda FLOAT NOT NULL,
+    vlrUnitarioVenda FLOAT NOT NULL,
     dthVenda DATETIME NOT NULL,
     vlrTotalVenda FLOAT NOT NULL,
     CONSTRAINT FK_Venda_Cliente FOREIGN KEY (idCliente) REFERENCES Cliente(idCliente),

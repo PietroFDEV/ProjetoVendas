@@ -10,6 +10,10 @@
 </head>
 <body>
     <div class="container mt-4">
+        @if (TempData["ErrorMessage"] != null)
+        {
+            <div class="alert alert-danger">@TempData["ErrorMessage"]</div>
+        }
         <h2>Produtos</h2>
         <input type="text" id="searchProduto" class="form-control mb-3" placeholder="Pesquisar por descrição">
 

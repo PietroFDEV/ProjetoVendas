@@ -17,7 +17,7 @@ namespace ProjetoVenda.Models
         public Produto Produto { get; set; }
 
         public int qtdVenda { get; set; }
-        public double vleUnitarioVenda { get; set; }
+        public double vlrUnitarioVenda { get; set; }
         public DateTime dthVenda { get; set; }
         public double vlrTotalVenda { get; set; }
     }
